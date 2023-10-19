@@ -38,7 +38,7 @@
     "ext-libxml": "*",
     "ext-pdo": "*",
     "renanbr/bibtex-parser": "^2",
-    "typo3/cms-core": "^11.5"
+    "typo3/cms-core": "^12.4"
   },
   "replace": {
     "typo3-ter/publications": "self.version"
