@@ -16,7 +16,7 @@ class ClassValidator extends AbstractValidator
      * @param mixed $value
      * @return void
      */
-    public function isValid($value)
+    public function isValid($value): void
     {
         if (!class_exists($value)) {
             $this->addError(
