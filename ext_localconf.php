@@ -1,5 +1,11 @@
 <?php
 
+use In2code\Publications\Controller\PublicationController;
+use Psr\Log\LogLevel;
+use TYPO3\CMS\Core\Log\Writer\FileWriter;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
+
 defined('TYPO3') || die();
 
 call_user_func(
@@ -8,21 +14,22 @@ call_user_func(
         /**
          * Include Frontend Plugins
          */
-        \TYPO3\CMS\Extbase\Utility\ExtensionUtility::configurePlugin(
+        ExtensionUtility::configurePlugin(
             'publications',
-            'Pi1',
+            'Publication',
             [
-                \In2code\Publications\Controller\PublicationController::class => 'list,resetList,downloadBibtex,downloadXml'
+                PublicationController::class => 'list,resetList,downloadBibtex,downloadXml'
             ],
             [
-                \In2code\Publications\Controller\PublicationController::class => 'list,resetList,downloadBibtex,downloadXml'
-            ]
+                PublicationController::class => 'list,resetList,downloadBibtex,downloadXml'
+            ],
+            ExtensionUtility::PLUGIN_TYPE_CONTENT_ELEMENT
         );
 
         /**
          * PageTSConfig
          */
-        \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig(
+        ExtensionManagementUtility::addPageTSConfig(
             '<INCLUDE_TYPOSCRIPT: source="FILE:EXT:publications/Configuration/TsConfig/Page.tsconfig">'
         );
 
@@ -31,8 +38,8 @@ call_user_func(
          */
         $GLOBALS['TYPO3_CONF_VARS']['LOG']['In2code']['Publications'] = [
             'writerConfiguration' => [
-                \TYPO3\CMS\Core\Log\LogLevel::DEBUG => [
-                    \TYPO3\CMS\Core\Log\Writer\FileWriter::class => [
+                LogLevel::DEBUG => [
+                    FileWriter::class => [
                         'logFile' => 'typo3temp/logs/tx_publications.log'
                     ]
                 ]

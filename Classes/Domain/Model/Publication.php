@@ -265,6 +265,9 @@ class Publication extends AbstractEntity
      */
     protected string $borrowedBy = '';
 
+
+    protected int $_numeration = 0;
+
     /**
      * Basic mapping for any export. Which fields should be available in export files with which key.
      * ModelProperty => KeyNameInExport

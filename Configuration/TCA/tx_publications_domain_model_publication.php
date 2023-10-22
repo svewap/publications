@@ -502,11 +502,11 @@ $tca = [
                 'default' => '',
                 'softref' => 'typolink',
                 'fieldControl' => [
-                  'linkPopup' => [
-                    'options' => [
-                      'title' => 'URL',
+                    'linkPopup' => [
+                        'options' => [
+                            'title' => 'URL',
+                        ],
                     ],
-                  ],
                 ],
             ],
         ],
@@ -520,11 +520,11 @@ $tca = [
                 'default' => '',
                 'softref' => 'typolink',
                 'fieldControl' => [
-                  'linkPopup' => [
-                    'options' => [
-                      'title' => 'URL',
+                    'linkPopup' => [
+                        'options' => [
+                            'title' => 'URL',
+                        ],
                     ],
-                  ],
                 ],
             ],
         ],
@@ -538,11 +538,11 @@ $tca = [
                 'default' => '',
                 'softref' => 'typolink',
                 'fieldControl' => [
-                  'linkPopup' => [
-                    'options' => [
-                      'title' => 'URL',
+                    'linkPopup' => [
+                        'options' => [
+                            'title' => 'URL',
+                        ],
                     ],
-                  ],
                 ],
             ],
         ],
@@ -803,14 +803,14 @@ $tca = [
                 'maxitems' => 9999,
                 'size' => 10,
                 'fieldControl' => [
-                  'editPopup' => [
-                    'disabled' => false,
-                  ],
+                    'editPopup' => [
+                        'disabled' => false,
+                    ],
                 ],
             ],
         ],
         'patent' => [
-        'displayCond' => 'FIELD:bibtype:=:patent',
+            'displayCond' => 'FIELD:bibtype:=:patent',
             'exclude' => true,
             'label' => $llTable . '.patent',
             'config' => [

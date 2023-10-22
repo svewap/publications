@@ -11,9 +11,13 @@ use In2code\Publications\Pagination\NumberedPagination;
 use In2code\Publications\Utility\SessionUtility;
 use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Pagination\ArrayPaginator;
+use TYPO3\CMS\Core\Pagination\PaginationInterface;
+use TYPO3\CMS\Core\Pagination\SimplePagination;
+use TYPO3\CMS\Core\Pagination\SlidingWindowPagination;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
-use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
+use TYPO3\CMS\Extbase\Pagination\QueryResultPaginator;
 use TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 
@@ -31,31 +35,25 @@ class PublicationController extends ActionController
         $this->publicationRepository = $publicationRepository;
     }
 
-    /**
-     * @return void
-     * @throws NoSuchArgumentException
-     */
-    public function initializeListAction()
-    {
-        $this->setFilterArguments();
-    }
 
     /**
-     * @param Filter $filter
      * @return void
      * @throws InvalidQueryException
      * @throws NoSuchArgumentException
      */
-    public function listAction(Filter $filter): ResponseInterface
+    public function listAction(): ResponseInterface
     {
+
+        $filter = $this->createFilterObject();
         $publications = $this->publicationRepository->findByFilter($filter);
 
         $itemsPerPage = $filter->getRecordsPerPage();
         $maximumLinks = 10;
 
         $currentPage = $this->request->hasArgument('currentPage') ? (int)$this->request->getArgument('currentPage') : 1;
-        $paginator = new ArrayPaginator($publications, $currentPage, $itemsPerPage);
-        $pagination = new NumberedPagination($paginator, $maximumLinks);
+        $paginator = GeneralUtility::makeInstance(QueryResultPaginator::class, $publications, $currentPage, $itemsPerPage, (int)($this->settings['limit'] ?? 0), (int)($this->settings['offset'] ?? 0));
+        $paginationClass = $paginationConfiguration['class'] ?? SimplePagination::class;
+        $pagination = $this->getPagination($paginationClass, $maximumLinks, $paginator);
 
         if (array_key_exists('showGroupLinks', $this->settings) && (bool)$this->settings['showGroupLinks'] === true) {
             $this->view->assign(
@@ -70,6 +68,7 @@ class PublicationController extends ActionController
         }
 
         $this->view->assign('pagination', [
+            'currentPage' => $currentPage,
             'paginator' => $paginator,
             'pagination' => $pagination,
         ]);
@@ -84,12 +83,11 @@ class PublicationController extends ActionController
 
     /**
      * @return void
-     * @throws StopActionException
      */
-    public function resetListAction()
+    public function resetListAction(): ResponseInterface
     {
         SessionUtility::saveValueToSession('filter_' . $this->getContentObject()->data['uid'], []);
-        $this->redirect('list');
+        return $this->redirect('list');
     }
 
     /**
@@ -155,10 +153,9 @@ class PublicationController extends ActionController
     }
 
     /**
-     * @return void
-     * @throws NoSuchArgumentException
+     * @return Filter
      */
-    protected function setFilterArguments()
+    protected function createFilterObject(): Filter
     {
         if ($this->request->hasArgument('filter') === false) {
             $filterArguments = SessionUtility::getSessionValue('filter_' . $this->getContentObject()->data['uid']);
@@ -167,8 +164,7 @@ class PublicationController extends ActionController
             $filterArguments = $this->request->getArgument('filter');
             SessionUtility::saveValueToSession('filter_' . $this->getContentObject()->data['uid'], $filterArguments);
         }
-        /** @noinspection PhpMethodParametersCountMismatchInspection */
-        $filter = $this->objectManager->get(Filter::class, $this->settings);
+        $filter = GeneralUtility::makeInstance(Filter::class, $this->settings);
         if (!empty($filterArguments['searchterm'])) {
             $filter->setSearchterm($filterArguments['searchterm']);
         }
@@ -181,7 +177,7 @@ class PublicationController extends ActionController
         if (!empty($filterArguments['documenttype'])) {
             $filter->setDocumenttype($filterArguments['documenttype']);
         }
-        $this->request->setArgument('filter', $filter);
+        return $filter;
     }
 
     /**
@@ -191,4 +187,26 @@ class PublicationController extends ActionController
     {
         return $this->configurationManager->getContentObject();
     }
+
+
+    /**
+     * @param $paginationClass
+     * @param int $maximumNumberOfLinks
+     * @param $paginator
+     * @return PaginationInterface #o#Э#A#M#C\In2code\Publications\Controller\PublicationController.getPagination.0|(\#o#Э#A#M#C\In2code\Publications\Controller\PublicationController.getPagination.0&\Psr\Log\LoggerAwareInterface)|(\#o#Э#A#M#C\In2code\Publications\Controller\PublicationController.getPagination.0&\TYPO3\CMS\Core\SingletonInterface)|NumberedPagination|(NumberedPagination&\Psr\Log\LoggerAwareInterface)|(NumberedPagination&\TYPO3\CMS\Core\SingletonInterface)|mixed|object|\Psr\Log\LoggerAwareInterface|string|SlidingWindowPagination|(SlidingWindowPagination&\Psr\Log\LoggerAwareInterface)|(SlidingWindowPagination&\TYPO3\CMS\Core\SingletonInterface)|\TYPO3\CMS\Core\SingletonInterface|null
+     */
+    protected function getPagination($paginationClass, int $maximumNumberOfLinks, $paginator) : PaginationInterface
+    {
+        if (class_exists(\GeorgRinger\NumberedPagination\NumberedPagination::class) && $paginationClass === NumberedPagination::class && $maximumNumberOfLinks) {
+            $pagination = GeneralUtility::makeInstance(NumberedPagination::class, $paginator, $maximumNumberOfLinks);
+        } elseif (class_exists(SlidingWindowPagination::class) && $paginationClass === SlidingWindowPagination::class && $maximumNumberOfLinks) {
+            $pagination = GeneralUtility::makeInstance(SlidingWindowPagination::class, $paginator, $maximumNumberOfLinks);
+        } elseif (class_exists($paginationClass)) {
+            $pagination = GeneralUtility::makeInstance($paginationClass, $paginator);
+        } else {
+            $pagination = GeneralUtility::makeInstance(SimplePagination::class, $paginator);
+        }
+        return $pagination;
+    }
+
 }

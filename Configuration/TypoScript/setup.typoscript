@@ -48,7 +48,7 @@ module.tx_publications {
   }
 }
 
-[getTSFE().type == 1646653915]
+[request && request.getPageArguments()?.getPageType() == 1646653915]
 lib.contentElement {
   layoutRootPaths >
   layoutRootPaths.0 = EXT:publications/Resources/Private/Layouts/
@@ -85,7 +85,7 @@ xmlDownload {
 }
 [end]
 
-[getTSFE().type == 1646653916]
+[request && request.getPageArguments()?.getPageType() == 1646653916]
 lib.contentElement {
   layoutRootPaths >
   layoutRootPaths.0 = EXT:publications/Resources/Private/Layouts/
