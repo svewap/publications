@@ -10,7 +10,6 @@ use In2code\Publications\Domain\Service\PublicationService;
 use In2code\Publications\Pagination\NumberedPagination;
 use In2code\Publications\Utility\SessionUtility;
 use Psr\Http\Message\ResponseInterface;
-use TYPO3\CMS\Core\Pagination\ArrayPaginator;
 use TYPO3\CMS\Core\Pagination\PaginationInterface;
 use TYPO3\CMS\Core\Pagination\SimplePagination;
 use TYPO3\CMS\Core\Pagination\SlidingWindowPagination;
@@ -48,12 +47,14 @@ class PublicationController extends ActionController
         $publications = $this->publicationRepository->findByFilter($filter);
 
         $itemsPerPage = $filter->getRecordsPerPage();
-        $maximumLinks = 10;
+        $maximumLinks = 8;
 
         $currentPage = $this->request->hasArgument('currentPage') ? (int)$this->request->getArgument('currentPage') : 1;
         $paginator = GeneralUtility::makeInstance(QueryResultPaginator::class, $publications, $currentPage, $itemsPerPage, (int)($this->settings['limit'] ?? 0), (int)($this->settings['offset'] ?? 0));
-        $paginationClass = $paginationConfiguration['class'] ?? SimplePagination::class;
-        $pagination = $this->getPagination($paginationClass, $maximumLinks, $paginator);
+        $pagination = new SlidingWindowPagination(
+            $paginator,
+            $maximumLinks
+        );
 
         if (array_key_exists('showGroupLinks', $this->settings) && (bool)$this->settings['showGroupLinks'] === true) {
             $this->view->assign(
@@ -90,23 +91,20 @@ class PublicationController extends ActionController
         return $this->redirect('list');
     }
 
-    /**
-     * @return void
-     * @throws NoSuchArgumentException
-     */
+
     public function initializeDownloadBibtexAction()
     {
-        $this->setFilterArguments();
-        $this->request->setFormat('xml');
+        $this->request = $this->request->withFormat('xml');
     }
 
     /**
-     * @param Filter $filter
      * @return ResponseInterface
      * @throws InvalidQueryException
      */
-    public function downloadBibtexAction(Filter $filter): ResponseInterface
+    public function downloadBibtexAction(): ResponseInterface
     {
+        $this->request = $this->request->withFormat('xml');
+        $filter = $this->createFilterObject();
         $publications = $this->publicationRepository->findByFilter($filter);
         $this->view->assignMultiple([
             'filter' => $filter,
@@ -121,23 +119,20 @@ class PublicationController extends ActionController
             ->withBody($this->streamFactory->createStream($this->view->render()));
     }
 
-    /**
-     * @return void
-     * @throws NoSuchArgumentException
-     */
+
     public function initializeDownloadXmlAction()
     {
-        $this->setFilterArguments();
-        $this->request->setFormat('xml');
+        $this->request = $this->request->withFormat('xml');
     }
 
+
     /**
-     * @param Filter $filter
      * @return ResponseInterface
      * @throws InvalidQueryException
      */
-    public function downloadXmlAction(Filter $filter): ResponseInterface
+    public function downloadXmlAction(): ResponseInterface
     {
+        $filter = $this->createFilterObject();
         $publications = $this->publicationRepository->findByFilter($filter);
         $this->view->assignMultiple([
             'filter' => $filter,
@@ -195,7 +190,7 @@ class PublicationController extends ActionController
      * @param $paginator
      * @return PaginationInterface #o#Э#A#M#C\In2code\Publications\Controller\PublicationController.getPagination.0|(\#o#Э#A#M#C\In2code\Publications\Controller\PublicationController.getPagination.0&\Psr\Log\LoggerAwareInterface)|(\#o#Э#A#M#C\In2code\Publications\Controller\PublicationController.getPagination.0&\TYPO3\CMS\Core\SingletonInterface)|NumberedPagination|(NumberedPagination&\Psr\Log\LoggerAwareInterface)|(NumberedPagination&\TYPO3\CMS\Core\SingletonInterface)|mixed|object|\Psr\Log\LoggerAwareInterface|string|SlidingWindowPagination|(SlidingWindowPagination&\Psr\Log\LoggerAwareInterface)|(SlidingWindowPagination&\TYPO3\CMS\Core\SingletonInterface)|\TYPO3\CMS\Core\SingletonInterface|null
      */
-    protected function getPagination($paginationClass, int $maximumNumberOfLinks, $paginator) : PaginationInterface
+    protected function getPagination($paginationClass, int $maximumNumberOfLinks, $paginator): PaginationInterface
     {
         if (class_exists(\GeorgRinger\NumberedPagination\NumberedPagination::class) && $paginationClass === NumberedPagination::class && $maximumNumberOfLinks) {
             $pagination = GeneralUtility::makeInstance(NumberedPagination::class, $paginator, $maximumNumberOfLinks);
